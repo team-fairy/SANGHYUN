@@ -1,0 +1,42 @@
+ 오늘 발표를 맡은 김상현이라고 하고요. 소개드릴 논문은 2020년에 CVPR에 나온 'Analyzing and Improving the Image Quality of StyleGAN'이라는 논문입니다.
+
+(StyleGAN1)
+ 흔히 대부분 StyleGAN2로도 잘 알려져 있고, StyleGAN2를 설명드리기 앞서서 지난주에 김규리님께서 지난 주 발표에서 잘 해주셨지만 StyleGAN1의 핵심적인 부분에 대해서 설명을 잠시 진행하겠습니다. StyleGAN1은 같은 논문인 Progressive GAN을 기반으로 하고 있고, Progressive GAN은 latent로부터 추출된 임의의 vector를 점진적으로 증가시켜 나가면서 학습을 진행했을 때 더 좋은 최종 이미지 퀄리티를 얻을 수 있다고 얘기하는 논문입니다. 그래서 보시는 것처럼 기본 baseline으로 progressive GAN이 있고요. 거기에 오른쪽에 보이시는 것 같이, 여러가지 component를 추가하는 방식으로 Progressive GAN의 성능을 끌어올려서 StyleGAN을 만들어 제시했습니다. 이 표에서 보시는 것처럼 B, C, D, E, F를 각각 추가해서 얼마나 성능이 증가했는지 정량적으로 보여주고 있습니다. 그림으로 살펴보면 왼쪽 부분이 Progressive GAN의 구조고 이 것를 파인튜닝하고 내부구조를 조금 바꾸는 과정을 거쳐서 오른쪽처럼 이렇게 제시를 하게 되고요. 그리고 이 부분이 mapping network에 해당하는 C! 그리고 기존처럼 Z를 그대로 인풋을 넣는 게 아니라 학습된 컨스턴트를 넣는 부분이 여기 이고, 이 곳이 표에서의 D 입니다. 그리고 노이즈를 추가하여 stochastic variance를 추가한 부분은 여기이고, 이 부분은 E 에 해당하고, Mixing reguralization 통해서 W를 다른 값으로 넣어주는 부분이 그림에서 이 곳에 해당되며, 표에서는 F에 해당한다고 보시면 되겠습니다. 그래서 왼쪽에 traditional한 구조가 오른쪽으로 바뀐 것이 StyleGAN1 이고요. StyleGAN에서 가장 큰 contribution이라고 얘기 되는 부분은 latent z를 W로 맵핑하는 이 맵핑 네크워크 부분입니다. StyleGAN에서는 이러한 component를 추가해서 더 좋은 disentanglement 성능을 얻을 수 있었다고 얘기를 하고, 또, 이를 perceptual path lengths라고 하는 메트릭으로 평가한 바 있습니다. StyleGAN은 이 성능을 인정 받아서 여러가지 데이터에 학습이 되었고 웹에 다양한 pretrain network가 공개 되어 있습니다.
+
+(StyleGAN2)
+ 여기까지는 복습하는 의미에서 발표를 했었고 이제 본격적으로 StyleGAN2에 대해서 소개를 드리겠습니다. 논문 앞쪽에서 Z를 W로 바꾸는 부분에 대해서는 contribution을 인정을 해가지고 별다른 조치를 취하지 않겠다고 얘기하는데요. 반대로 말하면 이 것을 제외한 다른 부분 모두는 조금씩 바뀐다고 생각하시면 되겠습니다. StyleGAN 논문에서 PG-GAN을 base line으로 잡고 여러가지 component를 추가하는 방식으로 성능을 증가시켜서 StyleGAN을 완성했는데요. 마찬가지로 StyleGAN2 논문에서는 StyleGAN1을 baseline으로 잡고 거기에 여러가지 컴포넌트를 추가하거나 기존에 존재하는 component를 변환을 해가지고 성능을 증가시키고 있습니다. 그래서 보시는 바와 같이 여기 B, C, D, E, F가 추가 되었고요. 이것들이 뭔지 각각 하나씩 설명드리는 방식으로 오늘 발표를 진행하겠습니다.
+
+(Problem)
+ 먼저 논문에서 말하는 StyleGAN의 문제점 중에 하나가 Droplet artifact라는게 있는데요. Droplet artifact는 최종 결과물에 물방울 무늬 같은 노이즈가 반복해서 나타나는 현상입니다. 그것에 대해서 분석을 해본 결과 여기 보이는 64*64의 크기 때부터 작게 노이즈가 생성이 되고요. 이게 최종 결과물까지 이렇게 반영이 되는 것을 확인했습니다. 그리고 아주 드물게 이런 노이즈가 없을 때에는 아래줄에 예시처럼 최종 결과물이 굉장히 안 좋은 것을 확인했습니다.
+
+(weight demodulation)
+ StyleGAN2에서는 이 문제를 weight demodulation 이라는 구조를 제안함으로써 해결하게 되는데요. 기존에 StyleGAN에서는 Adaptive instance normalization을 사용하였는데 이것이 feature를 normalize하는 과정에서 연결되어 있는 두개의 feature 간의 관계를 파괴한다는 설명을 하고 있고요. 따라서, AdaIN 구조를 이제 대체하여서 제안되는 것이 바로 weight demodulation입니다. 기존의 구조를 보시게 되면은 StyleGAN에서는 먼저 conv layer를 통과해서 나온 output을 mean과 variance를 구해서 normalize하게 되고, scaling factor와 bias인 y를 곱하고 더해주어 Style 변환이 이루어지게 됩니다. 그림에서 보시는 것처럼 conv와 다음 conv 사이에 여러가지 normalization 과정이 들어가게 되고, 이 normalization 부분이 이 두개의 conv layer 사이의 관계를 해치고 있다고 주장을 하는 것입니다. 따라서 이를 해결하고자 scaling factor를 곱하는 modulation과 normalization을 진행하는 demodulation을 conv를 통과시킨 값에 하는 것이 아니라. weight인 w에 직접 시행하게 됩니다. 그래서 바깥쪽으로 빼주게 되는 거고요. 아래 도식은 파란색 부분에 해당하는 각각에 해당하는 도식입니다. 그래서 StyleGAN1과 2의 가장 큰 차이는 conv layer 사이에 있는 것들을 바깥으로 빼서 conv와 conv사이 feature의 관계에 영향을 없앴다고 얘기하고 있습니다.
+
+(Perceptual Path Length)
+ 다음으로 논문에서 제시하는 Perceptual Path Length에 대해 설명을 드리겠습니다. 이 것은 기존에 StyleGAN1에서 제안이 된 부분인데요. latent space W에서 interpolation을 통해 샘플된 이미지가 '얼마나 지각적으로 부드럽게 바뀌었냐!' 이 것에 대해서 disentanglement의 performance를 정량적으로 평가할 수 있도록 한 지표인데요. StyleGAN2에서는 Perceptual path length, 즉 PPL이 낮은 이미지는 사람이 봤을 때 좀 더 좋은 퀄리티를 가진다는 얘기합니다. 여기 보시면 왼쪽 이미지는 PPL 점수가 낮은 이미지들이고 오른쪽 이미지들은 PPL이 높은 이미지들입니다. 오른쪽 이미지에 비해서 왼쪽에 있는 이미지들이 사람이 봤을 때, 왼쪽에 있는 이미지들이 사람이 봤을 때 이미지 퀄리티가 더 좋다는 얘기고요 그럼 왜 이런 현상이 발생하느냐에 대해서 궁금하실텐데, 본문에서는 확실하지는 않지만 latent space 상에서 데이터가 많거나 좋은 이미지가 생성될 확률이 높은 부분에 대해서는 영역 자체가 확장된다고 주장을 하고 있습니다. 그래서 이게 stretched 되고 그러지 못한 부분에서는 squeeze가 되기 때문에 이러한 현상이 발생 한다고 얘기 하고요. 그림으로 설명을 드리면은 여기서 노란색 가장자리에 해당하는 부분들이 네모 박스가 하나씩 존재하는데 여기가 이렇게 맵핑이 되었다고 치면은 이 가장자리에 존재하는 부분들에서는 좀 squeeze 되는 듯한 부분이 보이실텐데 논문에서는 이러한 것을 말하는 것입니다. 그래서 이러한 부분을 interpolation을 통해서 vector를 샘플을 했을 때 값이 크게 변하게 되고, PPL 점수가 높게 나와서 이미지 퀄리티도 나쁘다라고 이해하시면 되겠습니다.
+
+(Perceptual Path Length (cont.))
+ 그리고 논문에서는 PPL 점수가 FID나 Precision, recall에 비해서 인간의 관점에서 더 좋은 이미지를 detect하는데 유용하게 사용될 수 있다고 얘기를 합니다. 보시면 위에 있는 이미지들과 아래 있는 이미지들이 FID랑 Precision, recall은 유사한데 PPL 점수만 다른 것을 알 수 있습니다. 이렇게 PPL 점수가 낮은 이미지들이 높은 이미지들보다 실제적으로 이미지 퀄리티가 좋기 때문에 좀 더 인간의 관점에서 좋은 이미지 퀄리티를 detect하는데 다른 매트릭보다 더 좋게 작용할 수 있다고 주장하고 있습니다. 그러면서 왜 PPL보다 다른 매트릭이 더 유용하지 않은지에 대해서는 기존에 제시된 논문을 인용하면서 그 근거를 제시하고 있습니다. 예시를 든것처럼 맨 오른쪽에 이미지를 보시게 되면 사람이 보기에는 좀 더 교양이로 판단할 확률이 높은데 모델을 통과시키게 되면은 indian elephant라고 이제 예측을 하게 되고요. 이를 통해 FID나 Precision, Recall 같은 metric들이 imagenet pretrained classifier에 기반을 하고 있고, 이것들이 texture detection에 좀 bias 되었다는 얘기를 합니다.  이런 것들로 모델이 shape보다 texture에 bias 되었다! 또 그게 매트릭에 반영이 되었다! 이렇게 주장을 하고 있습니다. 
+
+(Path Length regularization)
+ 이제 논문에서는 PPL이 낮은게 이미지 퀄리티가 좋다는 것을 주장하면서, 그래서 어떻게 모델적으로 PPL을 낮게 만들까에 대해서 얘기를 하는데요. 그래서 논문에서 다음과 같이 Path Length regularization을 소개 하고 있습니다. 이것을 직관적인 설명을 하게 되면, 'latent vector인 W가 변할 때 그로부터 생성되는 이미지 y도 변할텐데 그 정도가 비슷하면 좋겠다!'라고 얘기를 하고 있습니다. 그래서 W가 조금 변하면 generate된 image에 어떤 의미적인 부분 y도 조금 변하고 W가 많이 변하면 y도 많이 변하고 이런 식으로 되었으면 한다는 것이죠. 수식을 보시면은 자코비안 매트릭스 J_W의 transpose와 y를 곱하는 식으로 되어 있는데, J_w가 w space에서 weight의 derivation이고 y는 random image라고 보시면 되겠습니다. a는 training이 진행됨에 따라 변하는 이동 평균이고요. J_w와 random image y를 곱한 값을 낮추는 것이 앞에 말씀드린 어떤 부분을 정량적으로 컨트롤 할 수 있다고 얘기를 하고 있습니다. 이 부분은 이 논문에서 처음 제시된게 아니고 cite된 존스 홉킨스의 'matrix computations'에서 이미 제시가 된 기법이고 이 부분의 수학적인 분석에 대한 부분이 더 궁금하신 분은 해당 문서를 참고하시면 좋을 것 같습니다.
+
+(Lazy regularization)
+ 다음으로는 Lazy regularization인데 이 부분에서는 특별한 건 없고, 앞에 제시한 path length regularization을 포함해서 여러가지 regularization을 적용할 때, 계산적으로 오버헤드가 있기 때문에 16 배치마다 한 번씩만 적용한다는 것입니다.
+
+(phase artifact)
+ 다음으로 기존 StyleGAN의 또 다른 문제인 phase artifact를 소개해드리겠습니다. 이 것은 보시는 것처럼 이빨이나 눈동자같이 디테일한 부분에서 disentenglement가 자연스럽지 않은 현상을 얘기 하고요. transition이 이뤄질 때 이빨이 고정되어 있는 이 문제를 progressive한 구조를 택하게 되면서 각각의 레이어가 최상의 output을 내려는 시도에서 비롯된다! 이렇게 얘기를 하고 있습니다. 그래서 논문에서는 이 문제를 해결하기 위해서는 기존의 progressive growing하는 구조를 변환해야 한다! 라고 얘기를 하고 있습니다. 그래서 이를 해결하기 위해서 MSG-GAN이라는 논문의 구조를 참고하게 됩니다. MSG-GAN은 generator와 discriminator가 짝을 이루어 가지고 이렇게 4x4, 8x8 이미지가 나오게 되면 정보를 짝에 해당하는데다 정보를 전달하는 식으로 구성이 되어 있고요.
+
+(phase artifact(cont.))
+ 이러한 MSG-GAN 구조를 변형을 해가지고, 왼쪽 그림에서와 같이 b와 c 같은 구조를 제안하게 됩니다. 위 쪽은 generator 그리고 아래쪽은 discriminator에 해당한다고 보시면 되고, generator와 discriminator 둘 다 b와 같은 형태로 쓸수도 있고, 둘 다 c와 같은 형태로 쓸 수도 있고, 섞어서 써도 됩니다. 근데 어차피 결과를 보시면 큰 차이는 없고요. 데이터에 따라서도 좀 변화가 있는 것을 확인하실 수 있습니다. 그래도 이러한 변형을 적용 했을 때 더 자연스러운 disentanglement가 이루어진다고 합니다.
+
+(Large Networks)
+ 마지막으로 F에 해당하는 부분입니다. 이 시각화 한 결과를 도출한 모델의 구조는 방금 설명드린 MSG-GAN을 활용한 b 구조이고요. 이 구조를 활용해서 layer 별 contribution을 정량적으로 구하면, 아래와 같이 시각화 한 결과가 도출 됩니다. 여기 보시면 그 기존에 StyleGAN경우에는 512 x 512의 contribution이 가장 큰 것을 확인하실 수 있습니다. 이게 좀 이상한게 사실 1024x1024의 이미지를 지금 만드는 건데 최종적으로는 1024x1024의 영향력이 가장 커야 하지만 512x512가 영향력이 제일 크다는 것 입니다. 그래서 저자가 실제로 생성된 데이터를 뜯어봤을 때, generate된 image의 pixel level detail이 떨어지는 것을 확인을 했다고 얘기 하고 있고, 그 결과 네트워크의 크기를 키웠고 hyper parameter의 수가 좀 많이 증가 했지만, 그래도 1024x1024의 contribution이 크게 증가했고, 결과적으로 FID 스코어도 낮아지는 좋은 결과를 가져왔다! 라고 얘기하고 있습니다.
+
+(Projection of images to latent space)
+ 마지막으로 이 styleGAN2의 다른 용도를 소개하고 있는데요. real image와 generated image를 분류해내는 모델로서의 기능을 제시하고 있습니다. 보시는 사진은 real image와 generated image를 거꾸로 latent vector로 역으로 통과 시켰다가 다시 generate한 결과를 보여주고 있는데, StyleGAN2를 보시면 여기 윗줄이 generated image고 이거를 이제 거꾸로 latent vector에 맵핑했다가 다시 통과시켰을 때 100% 똑같은 이미지를 만들어 내는 거를 확인하실 수가 있습니다. 오른쪽에 이미지들은 real image인데, 얘네들은 거꾸로 맵핑을 했다가 다시 통과 시켰을 때, 디테일한 부분에서 좀 차이가 나는데요. 예를 들면 여기는 방향지시등이 좀 다른 것을 보실 수 있고, 여기는 앞범퍼가 좀 다르다던지 이런 현상을 발견했다고 얘기하고 있습니다. 마찬가지로 이게 왜 되냐에 대해 궁금해 하실텐데 기존에 제시 된 매트릭 중에 LPIPS distance가 있는데, 이 매트릭은 인간이 봤을 때 비슷한 정도를 정량적으로 판단할 수 있는 매트릭이고, 이 히스토그램으로 LPIPS distance를 다 나타냈을 때, real image와 generated image의 LPIPS distance의 분포 차이가 StyleGAN2에서 심해지는 것을 확인 하실 수 있습니다. 그리고 이런 것들이 영향이 있다고 얘기하고 있습니다. 이 부분에 대해서 디테일한 설명은 논문에 없었어서 해석이 좀 애매한데 이 부분은 자세히 아시는 분이 계시면 같이 토의 나눴으면 좋겠습니다.
+
+(Conclusion)
+ StyleGAN2를 정리하자면, StyleGAN을 개선시켰고, Droplet artifact를 제거하기 위해 AdaIN 대신 CNN의 가중치를 정규화(normalization)하는 weight modulation을 제시하였으며, Progressive Growing을 제거하여 부자연스러운 문제(mode)를 개선하면서 network를 키워 이미지 품질을 향상했다라고 정리 할 수 있겠습니다. 따라서, 이러한 기법들의 적용으로 FID 등 StyleGAN에 비해 굉장히 많이 개선되었습니다.
+
+이상으로 StyleGAN2의 논문 발표는 마치고, 질문 있으시면 질문 해주시면 감사하겠습니다.
