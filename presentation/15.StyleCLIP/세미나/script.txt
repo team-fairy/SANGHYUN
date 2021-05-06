@@ -1,0 +1,54 @@
+(제목) - page 1
+안녕하세요. 저는 오늘 발표를 맡은 김상현입니다. 오늘 발표 드릴 논문은 'styleclip: text-driven manipulation of stylegan imagery'입니다. 이 논문은 이번 년도 3월에 나온 논문으로, 이 논문에서는 1월에 OpenAI에서 'DALL-E'와 같이 공개한 'CLIP'과 'StayleGAN'을 결합한 형태의 텍스트를 기반으로한 이미지 편집 인터페이스를 제시하고 있습니다. 이 발표를 위해 이 논문을 선택한 이유는 이전에 stylegan에 대해서 설명을 했고, 이를 기반으로 최신 논문 및 트렌드가 어떠한 방향으로 흘러가고 있는지 소개를 해보는 것은 어떨까라는 생각으로 이번 발표를 준비 했습니다.
+
+(contents) - page 2
+이번 발표 순서는 다음과 같으며, backgound를 먼저 설명하는 것을 제외하고 나머지 부분은 논문 흐름과 비슷하게 간다고 생각하시면 되겠습니다. 사실 background를 설명드리는 이유가 어떠한 변형이 있기 때문에 설명드리는 것은 아니고, StyleCLIP을 구성하는 것이 어떤 것인가, 혹은 어떤 특징을 가지는가에 대해서 설명드리는 편이 이해하시는데 도움이 될 것 같아서 추가를 한 점을 먼저 말씀드립니다.
+
+(StyleGAN2)
+ 그러면, StyleCLIP을 설명하기에 앞서, StyleCLIP에서 사용되는 StyleGAN2와 CLIP에 대해서 먼저 각각 설명을 진행하겠습니다. StyleGAN2에 대한 전반적인 내용은 제가 이전에 했던 발표도 있었고, 이전에 김규리선생님께서 StyleGAN에 대해서 잘 설명해 주셔서 자세한 내용은 다루지 않겠지만, 그래도 StyleGAN2에 대해서 잠시 복습 차원으로 StyleGAN에서의 어떤 문제를 어떻게 해결했는지를 중점으로 설명을 진행하겠습니다. 말그대로 StyleGAN의 version 2인 StyleGAN2는 StyleGAN에서의 문제점을 찾고, 이를 해결할 수 있게끔 Generator의 구조를 개선을 한 것이라고 이해를 하시면 될 것 같습니다. 그럼 StyleGAN의 문제점은 무엇이냐하면, StyleGAN은 기존 GAN의 생성자 구조를 바꾸어 생성된 이미지의 퀄리티에서 SOTA를 기록했지만, 생성한 사진에 두 개의 artifacts가 존재함을 확인하였는데요.
+
+(Droplet artifact)
+ 첫 번째로는 최종 이미지에 물방울 같은 노이즈가 반복해서 나타나는 Droplet artifacts 가 있습니다. 이 것은 기존 StyleGAN에서 AdaIN과 같은 실제 통계로 nomalization을 하는 과정이 convolution layer와 convolution layer 사이의 feature들 간의 관계를 방해 하기 때문에 이러한 현상이 발생한다고 합니다. 그래서 StyleGAN2에서는 이를 해결하기 위해 scaling factor를 곱하는 modulation과 normalization을 진행하는 demodulation 과정을 바깥으로 뺀 weight demodulation을 제안함으써 이 문제를 해결하게 되었습니다.
+
+(Phase artifact)
+ 그리고 두 번째로는 phase artifact 입니다. 이 것은 보시는 것처럼 이빨이나 눈동자같이 디테일한 부분에서 disentenglement가 자연스럽지 않은 현상을 얘기 하고요. 이 문제를 progressive growing으로 인해 각각의 레이어가 최상의 output을 내려는 시도에서 비롯된다고 합니다. 그래서 논문에서는 이 문제를 해결하기 위해서 기존의 progressive growing하는 구조를 MSG-GAN이라는 구조를 참고하여 변형하게 됩니다. 즉, Progressive Growing대신 skip connection을 갖고 있는 생성자를 사용하여 이러한 문제점을 해결했다고 볼 수 있습니다.
+ 이렇게 StyleGAN에서 조금 크게 바뀐 부분에 대해서 설명을 했고, 그 외에도 StyleGAN2는 다양한 configuration을 추가해서 StyleGAN보다 더 disentangle 한 성능을 보인다고 할 수 있습니다.
+
+(CLIP)
+ 그리고 CLIP에 대해서도 간단하게 설명을 드리면, 기존 CNN은 이미지의 특징을 뽑아내고 분류하고자 하는 클래스의 개수에 맞춰서 그에 맞게 분류를 하는 형태를 가지고 있는 반면에 CLIP은 이미지와 text를 멀티모달로 동시에 고려를 합니다. 데이터셋을 구성하고 있는 데이터는 웹 크롤링을 사용하여서 텍스트, 이미지를 한 쌍으로 하고, 총 4억개의 데이터로 구성이 되어있습니다, architecture를 살펴보면 resnet과 ViT(vision transformer)를 사용하는 image encoder와 transformer 구조를 사용하는 text encoder로 구성이 되어 있습니다. 그래서 각각의 이미지와 text가 주어졌을 때, 각각의 encoder를 거쳐 어떤 벡터로 각각 변환이 되고, 이 두 벡터 사이의 유사도를 학습하는 방식으로 학습이 진행이 되게 됩니다. 그래서 결과적으로 학습을 마치게 되면 각각 encoding 된 text 벡터와 image 벡터는 비슷한 latent space상에 존재 하는 모델이 되고, inference를 진행할 때는 학습된 텍스트 인코더에 target 데이터셋의 클래스 이름이나 설명을 포함시켜 zero-shot linear classifier로써 적용이 되는 것 입니다.
+
+(질문)
+
+(Introduction)
+ 이제까지는 StyleCLIP을 구성하는 background에 대해서 간략하게 설명을 드렸고, 이제 StyleCLIP에 대해서 설명 드리겠습니다. 최근에는 다양한 분야에서 앞서 설명드린 StyleGAN의 disentangle 한 latent space를 사용해서 image manipulation을 하려는 많은 연구가 진행되고 있습니다. 이전 연구들에서는 latent space에서 원하는 image 변형을 위한 latent vector를 발견하는 것은 latent vector를 일일히 하나씩 변형해 보면서 사람이 직접 검수를 하거나, annotation이 달린 이미지를 활용하면서 이를 해결하고자 하였습니다. 하지만, 이러한 방식은 매우 노동 집약적이고, 추가 데이터가 필요할 때마다 다시 작업을 해야할 뿐만 아니라, 이러한 모델을 통한 control은 기존에 학습되어있는 semantic direction에만 control 할 수 있기 때문에 사용자의 창의성이나 상상력이 크게 제한 된다고 언급하고 있습니다. 따라서 본 논문에서는 이러한 수동적인 작업이 필요하지 않고 텍스트에 의해 직관적으로 image control을 가능하게 하기 위해서, StyleGAN과 CLIP 모델을 활용하여 text-based image manipulation interface를 개발했습니다.
+
+(Introduction)
+ 앞의 그림에서 보이시는 것처럼 text를 입력하면 그에 맞는 이미지로 변형을 하게 됩니다.
+
+(StyleCLIP Text-Driven Manipulation)
+ 본 논문에서는 CLIP과 StyleGAN을 combine하는 세 가지 technique에 대해서 설명을 하는데요. 앞의 표에서 볼 수 있듯이 latent optimization, latent mapper, global direction이 있습니다. 각각이 어떻게 동작되는 지는 뒤에서 설명드리겠지만, 앞에 있는 표를 보면서 특징들을 간략히 설명을 드리자면, latent optimization은 W+ space에 있는 이미지의 latent vector와 CLIP space에서 text의 latent vector 의 loss를 최소화 하는 가장 유연한 방법이지만, 몇 분의 최적화 작업이 필요한 특징을 가지고 있습니다. 그리고 latent mapper 또한 W+ space 상에서의 이미지 latent vector를 사용하고, 이 latent mapper의 특징은 auxiliary mapping network를 사용해서 이미지에서 원하는 속성을 control을 하는 방식으로, 이 technique의 train 시간은 몇 시간이 걸리는 것이 단점으로 뽑히지만, 그래도 latent optimization을 어느정도 커버하는 상위 버전이라고 생각하시면 될 것 같습니다. 그리고 마지막으로 global direction에서는 W +에 비해 세밀하고 더 disentangle 한 시각적 control에 더 적합한 S 스타일 space에서 계산을 하게 되며, 한 번 direction vector를 찾아 놓으면, 어떤 이미지가 들어오더라도 바로 그 direction vector를 더하기 혹은 빼기 연산을 하여 결과를 빠르게 구할 수 있습니다. 하지만 하나의 텍스트에 대하여 global direction을 찾기 위해서 3~4시간 정도 걸리는 단점이 있습니다.
+
+(latent optimization)
+ 그럼 첫 번째로 설명드릴 latent optimization부터 어떻게 동작하는지 자세히 설명드리면, 여기서 사용되는 CLIP 모델은 loss network로써 사용하게 됩니다. 이 technique는 image에 해당하는 encoding 된 w vector를 찾아내서 이를 변형시키기 위한 방법인데, 아래와 같은 식으로 표현이 됩니다. 이 equation만 보더라도 latent optimization이 어떻게 진행이 되는지 알 수 있는데, 이 수식에서의 G는 StyleGAN2의 generator이고, D_CLIP 부분은 G(w)와 text t의 임베딩 벡터의 cosine distance를 계산하는 하는 부분으로, 이 cosine distance를 줄이는 방향으로 optimize 시켜서 manipulation을 진행하기 위한 term 입니다. 그리고 나머지 term, L2 distance와 identity loss는 w vector를 w_source vector와 유사하게 input 이미지를 임베딩시키는 부분이라고 이해하시면 될 것 같습니다. 여기서의 L2 distance는 모두 아실거라 생각하고, identity loss에 대해서 설명을 하면 identity loss에서의 R은 pretrain된 arcface를 사용해서 w_source와 w의 cosine similarity를 구하고 이를 optimize 시켜주는 term 입니다. 그래서 이 optimization은 gradient decent 방식으로 manipulation을 해결합니다. 지금까지 설명한 것을 정리를 하면, w_sourc vector와 비슷한 w vector를 생성해서 변경시킬 복제본을 만든다고 이해하시면 되고, 인코딩된 text t vector와 유사하게 w vector를 D_CLIP 모델을 통해 이동시킨다고 이해하시면 쉽게 이해가 되실 겁니다. 앞의 그림은 optimization 접근 방식을 200-300 회 반복 후 얻은 몇 가지 편집 내용을 보여주는 그림인데, 그림에서 보시다시피 어떤 사람의 identity를 변경하고 싶다고 할 때는 lambda ID을 낮은 값으로 설정을 하면서 진행하는 것을 보실 수 있습니다. 즉, 어떤 사람의 속성을 조절할 때는 lambda id 값을 일정치 주고, 그림과 같이 비욘세나 엘사, 트럼프 같이 identity를 변경하고자 할 때는 lambda id값을 없애는 방식으로 진행하는 것 입니다.
+--------------- 아래 수정 ----------------
+(latent mapper)
+ 두 번째로는 latent mapper입니다. latent optimization에서의 단점은 앞서 말씀드렸다시피 단일 이미지를 편집하는 데 몇 분의 최적화가 필요한것이며, 이 방법은 매개 변수 lambda L2나 lambda ID 값에 다소 민감하다고 합니다. 그래서 논문에서는 보다 효율적인 latent mapper를 소개합니다. latent mapper는 앞서 설명드린 바와 같이 auxiliary mapping network를 사용하여 이미지에서 원하는 속성을 control 한다고 말씀을 드렸었는데. mapper는 세 가지 다른 정도의 정보에 해당하는 FC layer로 구성이 됩니다. 앞에 보이시는 그림과 같이 (coarse style, middle style, fine style)로 구성이 되고, 이 것의 구조는 기존 stylegan의 mapping network와 동일하지만 8개의 FC layer가 아닌 4개의 FC layer로 구성이 된다고 합니다. 이 것의 동작 방식을 그림을 예로들어 설명하자면, mapping network를 통해서 입력 이미지를 놀라는 이미지로 변형하고 싶다면 'surprised' 텍스트를 CLIP 텍스트 인코더를 통해 벡터를 구하고, 마찬가지로 놀라는 이미지를 StyleGAN으로 만들어서, 이를 CLIP image 인코더에 넣어 벡터를 구합니다. 그리고 이 두 벡터의 코사인 similarity로 loss를 정의를 하게 되는데요. 그러면 이런 StyleGAN의 이미지와 텍스트가 서로 매칭되도록 train이 됩니다. equation을 통해 설명을 다시 드리면, (w_c , w_m , w_f)로 구성된 w vector 가 매퍼가 제공하는 입력 이미지의 latent code를 나타내게 되는 것이고요. 이 latent code는 mapper로 먼저 특정 텍스트 프롬프트 t에 대해 훈련 된 다음 manipulation step M_t(w) 를 만드는데 사용됩니다. manipulation의 type과 세부적으로 어떻게 변하게 하고 싶은지에 따라 세 가지 매핑 네트워크의 subset을 훈련하도록 선택할 수 있습니다. mapper는 주어진 텍스트 프롬프트에 대한 입력 이미지를 기반으로 image control을 inference하고, 이러한 단계는 앞의 table에서 보이시는 것과 같이 다른 입력 이미지에 대해 높은 코사인 similarity을 갖습니다. 즉, 텍스트 프롬프트의 latent space에서 manipulation의 direction은 input latent code에 관계 없이 일반적이다라고 말 할 수 있겠습니다.
+
+(global direction)
+ 마지막으로 논문에 설명 된 세 번째 접근 방식은 global direction입니다. 여기서는 텍스트 프롬프트를 StyleGAN의 스타일 공간 S에서 global direction으로 매핑합니다. 이전의 latent mapper는 추론 시간이 빨라지지만 세밀하게 disentangle 한 control이 부족한 모습을 보인다고 얘기를 하면서 global direction을 설명을 하고 있는데요. 이 technique을 사용하면 style space가 다른 latent space보다 더 많이 disentangle 되기 때문에 세밀한 control 이 가능하다고 주장하고 있습니다. 동작 방식은 그림과 수식을 통해 살펴보면 간단한데, 이미지는 먼저 CLIP의 image encoder를 사용하여 스타일 코드로 인코딩 합니다. 이렇게 이미지를 인코딩 한 style code를 s로 표시한 후, 그림과 같이 G (s)를 해당 생성 된 이미지로 지정하고, 텍스트 프롬프트 t가 주어졌을 때, StyleCLIP은 아래의 식과 같이 G (s + 𝞪∆s)의 형태를 띄게됩니다. 여기서의 alpha는 이러한 변형의 강도를 결정하는 부분 해당합니다. 그리고 이 과정에서 다른 측면을 변경하지 않고 원하는 속성이 향상되거나 추가되는 이미지를 생성하도록 하는 것이 global diriction의 핵심인데 그 역할을 하는 것이 ∆s입니다. 그래서, 어떤 이미지가 들어오더라도, 어떤 latent space 위에 올라오더라도 미리 찾아놓은 ∆s의 방향으로 가면 어떻게 변하게 되는지가 정해지는 것입니다.
+ 여기서 β는 manipulation에서 disentanglement의 정도를 제어하는 데 사용할 수 있고, threshold가 높으면 control이 더 disentangle 한 결과를 내지만 동시에 control의 시각적 효과가 감소하게끔 합니다. 연령과 같은 다양한 상위 수준 속성은 여러 하위 수준 속성 (예 : 회색 머리카락, 주름 및 피부색)의 조합을 포함하므로 여러 채널이 관련된 이러한 경우 threshold를 낮추는 것이 바람직 할 수 있다고말하면서, 이러한 방식으로 disentanglement의 정도를 control하는 능력은 해당 접근 방식에 고유하다고 말하고 있습니다.
+
+( 그런데 여기서 ∆s에 대해서는 어떻게 찾고, 어떤 것인지에 대해서 궁금하실 텐데, 지금부터 어떻게 ∆s를 찾는지 설명하겠습니다. 스타일 space vector s에서 생성 된 이미지 G (s)를 latent 임베딩 i라 하고 조작 된 이미지 G (s + a∆s)를 latent 임베딩 i + ∆i라 할 때, 여기서의 두 latent vector의 차이 ∆i는 CLIP의 text 인코더 ∆t로 인코딩 된 텍스트 프롬프트 latent 코드의 특정 차이에 일치해야 한다는 것을 기반으로 합니다. 그래서 두 개의 latent space 사이의 이 간격을 메우기 위해 latent space ∆t에서 neutral(즉, 스포츠카, 중형차, 소형차 등을 대표적으로 일컫는 차와 같은 중간 값)과 속성이 있는 텍스트의 차이를 먼저 프롬프트 엔지니어링을 통해 얻습니다. 그리고 이제 임베딩된 text와 이미지가 colinearity를 갖는다고 가정하면, 이제 목표는 스타일 space에서 control을 하는 ∆s를 찾는 것입니다. 그래서 저자는 ∆s와 ∆i의 관계를 찾기 위해 equation과 같이 각 스타일 코드의 특정 채널 c를 특정 값으로 약간의 변화를 주고 ∆i에 대한 mean projection으로 관련성을 정의를 하게 됩니다. 각 채널에 대한 관련성이 계산 된 후에는 다음 equation과 같이 관련성이 threshold β 미만인 채널은 0으로 설정하게 됩니다. )
+
+(질문)
+
+(comparisons and evaluation)
+ 다음은 실험 부분이라고 할 수 있겠는데요. Latent Mapper 및 Global Direction 방법은 TediGAN과 비교하고 있고, 해당 그림을 보시면 저자는 복잡한 속성으로는 "trump", 그리고 덜 복잡하고 덜 구체적인 속성으로는 "모히칸 헤어", 그리고 더 단순하고 일반적인 속성은 "주름이 없는" 것으로 설정하여 실험을 진행했는데요. 실험 결과 latent mapper가 복잡한 속성에 적합하고, global direction은 더 간단하거나, 더 일반적인 속성에 충분하다고 결론지었습니다.
+
+(Limitation)
+ 해당 논문에서는 한계쩜을 Style-GAN의 generator와 CLIP모델에 의존적 모습을 하고 있다고 말하며, 그에 따라 이미지가 pre train된 generator의 도메인에 벗어난 것 까지 이미지를 control 할 수 없다고 합니다. 마찬가지로 이미지로 채워지지 않은 CLIP 공간 영역에 매핑되는 텍스트 프롬프트는 프롬프트의 의미를 충실히 이행하지 못한다는 한계점을 이야기 하고 있고요. 또 다른 문제로는 어떤 이미지 데이터에 과감한 변화를 주는 manipulation은 덜 성공적이라는 것을 발견했다고 합니다. 그니까 이게 어떤 것을 의미하냐면 앞의 그림과 같이 호랑이를 사자로는 쉽게 변형이 되는데 호랑이를 늑대로 변형 할 때는 덜 성공적이라는 것입니다.
+
+(Conclusion)
+ 마지막으로 결론입니다. 해당 논문에서는 StyleGAN과 CLIP의 latent space 간의 격차를 해소하는 3 가지 방법을 제안하는데, 이 방법들을 정리를 하자면 latent optimization은 이미지 한장당 최적화를 진행하기 때문에, 특정 (이미지, 텍스트)마다 몇 분 정도의 시간이 걸리지만 별도의 학습 과정은 필요 없고, 작동원리는 stylegan으로 생성된 이미지를 clip으로 encoding 된 vector와 text encoder로 encoding 된 vector의 차이를 줄인다고 생각하시면 됩니다., latent mapper는 하나의 텍스트에 대하여 학습이 진행되고, 학습이 완료되면 어떤 이미지에도 바로 적용할 수 있습니다. 하지만 하나의 텍스트에 대하여 학습이 되기 때문에 꽤 긴 시간의 학습 시간이 필요 합니다. mapper의 작동원리는 그냥 단순히 latent optimization에서 stylegan의 생성 모델에 들어가는 vector가 text에 맞춰서 더 disentangle하다는 것입니다. 마지막으로, global direction은 한 번 direction vector를 찾아 놓으면, 어떤 이미지가 들어오더라도 바로 그 direction vector를 더하기 혹은 빼기 연산을 하여 결과를 빠르게 구할 수 있지만, 하나의 텍스트에 대하여 global direction을 찾기 위해서 3~4시간 정도 걸립니다. 이상으로 styleclip에 대해서 발표를 마치고, 질문 있으시면 질문 해주시면 되겠습니다. 감사합니다.
+
+
