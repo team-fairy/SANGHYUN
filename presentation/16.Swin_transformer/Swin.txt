@@ -1,0 +1,60 @@
+(소개)
+발표 시작하겠습니다. 이번 발표에 발표할 논문은 Swin transformer: hierachical vision transformer using shifted windows라는 논문이고, 올해 3월 말에 마이크로소프트에서 발표한 논문입니다. 이 논문을 이번 발표로 선정한 이유는 Swin transformer가 최근 classification, object detection, semantic segmentation 부분에서 성능이 가장 좋은 모델 중 하나로 주목을 받고 있기 때문이고, 이전에 발표했던 StyleCLIP과 같이 NLP 쪽과 Vision 쪽이 자꾸 접목되는 것이 최신 트렌드라는 점을 소개 해드리려고 이 논문을 선정하게 되었습니다.
+
+(목차)
+발표 순서는 다음과 같고, 논문의 구성과 비슷하게 간다고 생각하시면 되겠습니다.
+
+(Introduction)
+ 본 논문에서 제안하는 Swin Transfomer는 NLP 분야에서 많이 쓰이는 Transformer를 Vision분야에 적용한 모델로 Hierarchical feature maps와 Window-based Self-attention이 특징적입니다. Swin Transfomer는 작년 Google에서 제안된 방법인 Vision Transformer의 한계점을 개선한 모델이라고 보시면 됩니다.
+
+(transformer)
+ Swin Transfomer에 대해 설명 드리기 전에 NLP 분야에 많이 쓰이는 Transformer와 Vision분야에 많이 쓰이는 CNN를 비교한 후, 본 논문에서 사용된 Self-attention에 대해 간략히 설명해 드리겠습니다.
+ Transformer에서 사용되는 attention 방법은 왼쪽 그림처럼 input이 들어왔을때 input들 간의 inter-relation을 고려합니다. 반면에 CNN은  Transformer 보다 지역적인 모습을 보이는데, 오른쪽 그림처럼 멀리 있는 픽셀과의 관계를 고려한 정보 추출은 어렵다는 한계점이 있습니다. 그래서 최근에는 Vision분야에서 CNN을 Transformer로 대체하고자하는 연구를 활발히 진행하려고 하는 것 입니다.
+
+(self-attention)
+ 본 논문에서는 Attention 방법 중 Self-attention을 사용했습니다. 왼쪽 문장에 적용한 예를 보시면, Self-attention은 한 단어가 동일 문장 내에서 다른 단어들에게 얼마나 영향을 미치는지를 계산합니다. 이런 방법은 input이 image가 되었을때도 유사합니다. 이미지 내 한 패치와 다른 패치들과의 관계를 계산하게 하는 것이 image에서의 Self-attention입니다.
+ 하지만, 이미지에 self-attention을 적용했을 경우 이미지 크기에 따라 quadratic 한 연산량을 가지고 있기 때문에 이미지 사이즈가 클 경우에는 연산이 거의 불가능할 정도의 연산량을 가지고 있습니다. 그래서 본 논문에서 window라는 방법론을 제안하게된 것 입니다.
+
+(overall architecture)
+ 아래 그림은 Swin Transformer 의 구조입니다. 맨 앞단에 이미지를 Patch의 구성으로 변환하는 Patch Partition Layer와 4개의 Stage로 구성되어 있습니다. 각 Stage는 Stage1의 Linear Embedding Layer를 제외하고, Patch Merging Layer와 2개의 Swin Transformer Block으로 구성되어 있습니다. 우측의 그림 (b)는 각 Stage에서 2개의 Swin Transformer Block의 내부 구조를 나타낸 그림으로 뒤에서 자세히 설명해 드리겠습니다.
+
+(overall architecture-1)
+Architecture의 앞 부분부터 설명을 해 드리면, Stage 1에 들어가기 전에는 RGB 이미지를 여러 Patches로 나눠줍니다. 이 때 Patches는 token으로 생각하면 됩니다. patch size는 H, W 를 4로 나눈 값이고, 이로 인해 channel은 3x4x4가 됩니다. 이후 Stage 1에 들어가면서 linear Embedding을 통해 사용자가 정의한 channel 값으로 바꿔줍니다. 그리고 앞서 설명드렸듯이 stage 2,3,4에서는 이미지의 사이즈를 줄여주어 hierachical architecture를 구성하게 됩니다. 이제 본 논문의 핵심인 Swin Transformer Block으로 들어가는데 Swin Transformer Block의 특징을 설명해 드리기 위해 이전 모델인 ViT(Vision Transformer)에 대해 설명해 드리겠습니다.
+
+(ViT)
+아래의 그림 Vision Transformer을 보면, Vision Transformer의 경우 non-overlapping patch에 직접적으로 transformer 구조를 적용합니다. 아래 수식을 보시면 image size에 대하여 Quadratic한 계산량 증가를 보입니다. Swin transformer는 여기서 이 Multi-Head Attention을 window based self-attention과 shifted window based self-attention로 modify하여 블럭을 구성합니다. 대략적인 Swin Transformer Block의 구조는 residual connection을 동반하고 있고, 각 Attention Module, MLP에 들어가기 전 LayerNorm을 적용해줍니다. window self-attention은 M x M개로 구성된 window 내에서 존재하는 Patch들에 대해서만 attention score를 계산한다.  Patch의 개수는 M*M이고 모든 Patch에 대해 attention score를 계산하기 때문에 Computation Complexity를 M^2hwC 와 같이 표현할 수 있고, 따라서 Swin transformer는 Feature Map 해상도에 선형적인 Computation Complexity를 가질 수 있습니다.
+
+(Swin transformer blocks)
+앞서 말씀드렸듯이 Swin Transformer Blocks 내에 W-MSA와 SW-MSA가 있습니다. W-MSA 에서는 이미지를 4개의 윈도우로 나누고, 그 뒤에 SW-MSA에서는 윈드우를 shift합니다. 이 과정에서 window size가 M일 때 ([M/2], [M/2])만큼 옮겨서 partition 해줍니다. 예를 들어 window가 4x4의 패치로 구성될 때, window partition을 왼쪽으로 2만큼 아래로 2만큼 이동합니다. 이 단계에서는 non-overlapping window 사이의 연결성을 확보하는 역할을 합니다. 
+
+(Shifted Window based Self-Attention)
+이때 self-attention은 window 내에서만 진행이 되기 때문에 computation efficiency를 확보할 수 있습니다. Shift가 진행된 이후에도 Shift된 윈도우내에서 self-attention을 진행합니다.
+
+(Cyclic Shift)
+본 논문에서는 computation complexity를 유지하면서 이러한 sub-window의 크기를 늘리는 방법으로 cyclic-shift라는 방법을 제시했습니다. 아래의 그림에서처럼 기존 window 크기보다 작은 sub-window들을 이동시켜 window 크기에 맞도록 합친 뒤 self-attention을 계산하는 방법입니다. 그림을 보면 A, B, C의 영역을 우측 하단으로 그림과 같이 이동시켜 sub-window들의 결합으로 window의 크기를 유지하도록 합니다. 이때 마스킹 기법을 사용하는데요. Shift가 된 뒤, 이렇게 여러개의 서브 윈도우로 구성된 batched window의 경우 feature map 상에서 서브윈도우는 실제로 인접하지 않습니다. 그래서 해당 window 내에서 self-attention을 계산할 때 Masking 기법을 사용하여 개별적인 sub-window 내의 attention score를 계산할 수 있도록 합니다. 
+
+(variants)
+또한, 본 논문은 4가지의 variant도 소개를 하고 있습니다. C가 96, 128, 192로 바뀌고 block의 수도 바꾸어서 제안한 것을 알 수 있습니다.
+
+(ablation study)
+실험 결과 입니다. 본 논문은 Ablation study(애블레이션 연구) 결과를 포함하고 있습니다. 우측은 테이블은 padding과 cyclic 방법론을 비교한 결과입니다.
+
+(classification results)
+Swin Transformer 는 도입부에서 말씀드린 것처럼 Classification, Detection, Segmentation에서 현재 가장 우수 한 성능보이는 모델 중 하나이구요. ImageNet을 사용한 벤치마크 실헙 결과는 테이블에서 보이시는 것처럼 우수항 Accuracy를 보이고 있습니다. 
+
+(detection results)
+Swin Transformer 는 도입부에서 말씀드린 것처럼 Classification, Detection, Segmentation에서 현재 가장 우수 한 성능보이는 모델 중 하나이구요. ImageNet을 사용한 벤치마크 실헙 결과는 테이블에서 보이시는 것처럼 우수항 Accuracy를 보이고 있습니다. 
+
+(semantic segmentation results)
+Swin Transformer 는 도입부에서 말씀드린 것처럼 Classification, Detection, Segmentation에서 현재 가장 우수 한 성능보이는 모델 중 하나이구요. ImageNet을 사용한 벤치마크 실헙 결과는 테이블에서 보이시는 것처럼 우수항 Accuracy를 보이고 있습니다. 
+
+(conclusion)
+결론입니다. 본 논문은 hierarchical feature representation을 생성한 Swin Transformer라는 Vision Transformer를 제안을 했습니다. Shifted Window를 기반으로 self attention을 제안함으로써 quadratic computation 이라는 vision transformer의 고질적인 문제를 해결하는데 이바지했습니다. 또한, NLP와 Vision이라는 두 분야에 대해 유사한 구조를 제안함으로써 연구적으로 의의가 있다고 평가할 수 있습니다. 
+
+(ViT)
+Vision Transformer는 작년 10월에 공개가 되었는데, CNN 구조를 전혀 사용하지 않고, transformer 구조를 활용해 Image classification을 수행을 한 최초의 논문이라고 이해하시면 될 것 같습니다. 그리고 CNN을 사용하지도 않았음에도 SOTA를 기록하고 있는 CNN을 기반으로 한 모델과 비슷한 성능을 내는 모델입니다.
+ 그럼 ViT를 아래의 그림을 활용하면서 모델의 단계 별로 어떻게 진행되는지 간략히 설명하겠습니다.
+ 1번 부분에서 input 이미지를 9개의 patch로 잘라내는 것을 볼 수 있습니다. 이 것을 NLP에 사용되는 transformer로 생각하면 전체 이미지는 문장 전체이고, 나눠진 patch는 문장을 구성하는 각각의 단어라고 생각하시면 쉬울 실 것입니다. 그래서 이러한 패치들을 문장처럼 쭉 연결하고, 각각의 patch를 1차원의 vector로 풀어낸 뒤 linear projection을 통해 embedding vector로 만들게 됩니다. 
+ 다음 2번 부분에서는 Classification token과 position embedding을 추가하는 것인데, classification token은 classification을 위해 사용되는 어떠한 특별한 token이라고 이해하시면 되고, position embedding은 pach의 위치에 대한 정보라고 이해하시면 될 것 같습니다. 그래서 이 부분에서는 이러한 classification token 1개와 9개의 patch embedding에 각각 position embedding을 추가하는 부분이라고 생각하시면 될 것 같습니다.
+ 다음은 transformer encoder에 해당하는 3번 부분을 설명하겠습니다. ViT의 transformer encoder는 기존의 transformer encoder와 차이가 있는데요. 기존의 transformer에서는 오른쪽 그림과 같이 layer normalization의 위치가 multi head attention 이후에 있습니다. 이러한 normalization의 위치는 transformer의 학습에 어려움을 주고있다고 후속 연구에서 설명을 하게 되고, ViT는 이를 받아들여 multi head attention 이전에 normalization을 적용하는 방식을 채택했다고 이해하시면 될 것 같습니다. 그래서 2번 부분의 output이 3번 부분에 들어가게 되고, 논문에서는 12개의 transformer encoder를 사용하는데 이러한 multi head attention을통과하여 최종적인 각각의 패치에 대한 output을 뱉어내게 됩니다. 하지만, 이미지를 분류함에 있어서 각각의 patch에 대한 정보가 아닌 전체적인 이미지에 대한 정보가 필요한데, 전체적인 이미지에 대한 정보를 추출하는 방법은 각각의 patch를 평균을 내는 방식도 있지만, 이 논문에서는 그 역할을 하는 것이 아까 2번 부분에서 설명드린 classification token으로써 전체적인 이미지의 정보를 추출합니다. 이 technique은 BERT에서 처음 제안된 것이고, ViT에서는 이러한 부분을 채택한 것입니다. 그래서 4번 부분에서 보이시는 것 같이 Classification token을 MLP에 태워서 결과를 내게 됩니다.
+
