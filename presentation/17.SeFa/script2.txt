@@ -1,0 +1,52 @@
+(제목)
+ 안녕하세요. 저는 이미지 처리팀에서 오늘 발표를 맡은 김상현 입니다. 오늘 발표 드릴 논문은 'Closed-Form Factorization of Latent Semantics in GANs'입니다. 본 논문은 홍콩 과기대에서 쓰여진 논문으로 2021년 4월 CVPR에 개재된 논문입니다. 본 논문에서 제안하는 방법은 unsupervised learning 방식으로 latent direction을 찾는 방법을 소개합니다.
+
+(contents)
+ 발표 순서는 논문 순서와 같으며, 해당 논문 같은 경우에는 참신하지만 간단한 방법을 가지고 있기 때문에 method 부분이 길지는 않습니다. 그리고, 제안된 방법의 정확한 평가 지표가 없어서 이를 뒷받침 하고자 하는 많은 실험이 진행되었습니다. 그래서 논문에 대한 발표는 실험 위주가 되는 점을 참고하시면 될 것 같습니다. 그럼 발표 시작하겠습니다.
+
+(introduction)
+ GAN은 최근에 이미지 합성에서 엄청난 성공을 거두었고, 더 나아가 latente space에서의 latent code를 제어함으로써 이미지 편집을 할 수 있게 되었습니다. 이러한 이미지 편집은 disentangle한 latent space에서 latent code를 원하는 방향으로 이동 시키는 것으로 할 수 있습니다. 즉, 이미지를 편집하는 것의 핵심은 이러한 방향을 찾는 것에 있다고 할 수 있고, 저희는 latent code가 어느 방향으로 이동하냐에 따라 이미지의 어떤 부분이 변하는지를 찾음으로써 그 방향을 찾을 수 있습니다. 이러한 방식의 기존 supervised learning을 통한 이미지 편집 방식은 일반적으로 대량의 latent code를 무작위로 샘플링한 다음, 오른쪽 아래와 같은 이미지로 미리 정의된 label로 annotation을 진행하고, label이 지정된 샘플을 사용하여 latent space에서 classifier를 학습합니다. 따라서, 본 논문에서는 이러한 supervised learning 방식으로 학습하는 것은 latent space의 dimension이 매우 크고, 이미지의 다양성으로 인해서 latent space에서의 방향을 찾는 것은 매우 어렵다고 말하고 있습니다. 
+ 그래서 본 논문에서는 어떠한 학습 방식이나 샘플링에도 독립적인 방식으로 이미지 편집을 위한 direction을 찾는 새로운 알고리즘인 Semantic factorization algorithm, SeFa를 제안합니다.
+
+(Method - Preliminaries)
+ SeFa는 GAN의 Generation mechanism을 분석하는데, 본 논문에서는 Generation 과정 중에서 첫번째 projection 단계의 모델 가중치를 분석하여 latent space에서 의미 있는 direction을 효율적으로 식별 합니다. 즉, pre-trained된 가중치만 있으면 unsupervised learning을 기반으로 찾을 수 있다고 이해하시면 됩니다.
+ 기존에 제안되었던 GAN 논문들이 이미지를 수정할 때, 사용한 공통적인 방식을 살펴보면 다음 equation 1번과 equation 2번과 같습니다. 각각의 notation은 G를 generator, z를 latent code, A와 b는 transformation matrix를 의미하고, 각각 weight와 bias term을 의미하게 됩니다. 이 단계는 latent code가 첫 번째 projection을 진행하는 단계입니다.
+ equation 2번은 이미지를 수정하는 단계이라고 이해하시면 됩니다. 즉, latent space에서 처음 이미지의 latent code가 주어지고 특정 방향 n과 그 방향으로 얼마나 변화시킬지의 정도를 결정하는 alpha가 주어졌을 때, 이미지가 변화한다고 생각하시면 됩니다. 
+
+(Method - Unsupervised Semantic Factorization)
+ 본 논문에서 GAN의 generation model은 이러한 과정이 반복적으로 projcetion하게 되고, 이러한 과정을 근사한 식을 equation 3번과 같이 설명하고 있습니다. 이 식을 통해서 알 수 있는 것은 이미지의 변화가 latent z와 상관이 없고, 오로지 (alpha)An에 의존한다는 점입니다. 또한, A의 가중치가 이미지 변화에 필수적인 정보를 가지고 있다고 예상할 수 있습니다. 직관적으로 An이 0인 경우에는 y'=y가 되므로 이미지가 변하지 않게 되니, equation 4번에서 볼 수 있듯이 'An을 크게 만들어주는 n을 찾으면 되겠다!', 즉 A를 n에 projection 시켰을 때 가장 큰 변화를 일으키는 direction을 찾는 것이 이 논문의 핵심이라고 할 수 있습니다.
+ 그 이후의 과정은 라그랑주 승수법으로 이 문제를 해결하게 되는데, A^(Transpose)*A에서 가장 큰 k개의 eigenvalue 각각에 대응되는 eigenvector가 방향인 n이 됨을 보였고, 이러한 방식을 PGGAN, StyleGAN, BigGAN에 대해 일부 projection을 분해하고 앞의 방식대로 latent code를 수정하여 이미지를 생성했습니다.
+
+(Experiments - Interactive Editing by Tuning Interpretable Directions)
+ 본 논문의 경우에는 성능 평가를 위한 보조지표가 존재하지 않은 오르쪽 그림과 같은 대화형 인터페이스를 개발했기 때문에, 많은 실험을 진행하였습니다. 그래서 지금부터 논문에서 제시한 실험과 그 실험에 대한 결과를 보고, 제안된 방법의 성능을 어떻게 입증했는지 말씀드리겠습니다. 본 논문에서는 Supervised learning 방식과 Unsupervised learning으로 학습한 이미지 편집 모델을 SeFa 알고리즘을 적용한 StyleGAN 1, 2, BigGAN과 비교를 하였고, 제안된 모델들은 FF-HQ, anime face, 풍경과 사물, 도로 그리고 imagenet을 사용하여 학습하여 비교하였습니다.
+
+(Experiments - Results on StyleGAN)
+ 우선 저자들은 StyleGAN에 SeFa가 적용이 잘 되었는지에 대한 실험을 진행했습니다. 실험은 각 데이터셋마다 2000개의 이미지를 랜덤으로 뽑아 이미지 변경 정도를 평가하는 User study를 기반으로 진행을 하였습니다. 오른쪽 표에서 괄호는 layer의 위치를 나타내고, Bottom, Middle, Top은 StyleGAN에서 layer 마다 변하는 범위가 바뀌는 Coarse style, middle style, fine style이라고 생각하시면 될 것 같습니다. 따라서, Bottom은 회전 등의 큰 변화를 나타내고, Middle은 모양 등의 중간 변화, Top은 색깔 등 미세한 변화를 변하게 한 것을 뜻합니다. 또, 분자는 편집된 이미지가 원본에 비해 눈에 띄게 바뀌었는지를 나타내며, 분모는 원하는 스타일로 변경이 되었는지를 나타내고 있습니다. 이를 통해 SeFa는 GAN model의 특정 계층에서의 변형도 사람이 이해할 수 있는 개념을 실제로 찾을 수 있다고 주장하고 있습니다.
+
+(Experiments - Results on BigGAN)
+ 다음은 다양한 카테고리의 범주로 이미지를 편집하는데 적용할 수 있다는 일반화에 관한 실험입니다. 해당 GAN 모델은 BigGAN을 사용했는데, 아래의 그림과 같이 Zoom을 당긴다던지, 회전, 아니면 개체의 속성을 바꾸는 등 다양한 범주로서의 변화도 가능하다는 것을 말해주고 있습니다.
+
+(Experiments - Qualitative Results)
+ 이 실험은 SeFa 알고리즘과 Supervised learning 방법의 InterFaceGAN과의 비교를 한 실험인데, 아래의 그림을 보면, 두 모델의 성능이 언뜻봐도 비슷한 것을 알 수 있습니다. 하지만, 저자들이 이 실험으로부터 주장하고 싶은 것은 Supervised learning을 기반한 InterFaceGAN은 많은 데이터 및 샘플링을 하지만, SeFA는 그런 것들에 독립적이므로 같은 성능을 보이는 것에서 SeFa가 훨씬 효율적임을 주장하고 있습니다. 
+
+(Experiments - Re-scoreing Analysis)
+ 이러한 주장은 정량적인 평가를 통해서도 하고 있습니다. ResNet-50을 celebA 데이터셋에 대한 attribute로 학습하여 적절하게 이미지가 바뀌었는지 분석을 하였는데, 이를 통한 3가지 observation을 얻었다고 합니다. 첫 번째는 이전 ppt에서 설명드린 것 처럼 두 방법은 유사한 성능을 가지고 있다는 것이고, 두 번째는 아무래도 InterFaceGAN은 Supervised learning의 이점을 가지고 있기 때문에 견고성이 있다는 것입니다. 마지막으로 SeFa는 안경에 해당하는 variation이 크지 않아서 안경에 해당하는 direction은 찾지 못해 안경부분의 성능이 많이 떨어진다고 말하고 있습니다.
+
+(Experiments - Diversity Comparison)
+ 또한, Supervised learning을 기반해서 학습한 모델은 학습한 attribute에만 의존적인 모습을 보인다고 주장을 하면서, 본 논문에서 제시한 방법이 더 일반적이고 latent space에서 더 다양한 편집이 가능하다고 말하고 있습니다. 아래 그림 (a)의 InterFaceGAN을 활용해서 이미지 편집을 진행한 것은 보이시는 것과 같이 단일 속성만 변형시키는데 반해, 그림 (b)는 다중 속성을 변형시키는 복잡한 작업을 할 수 있음을 보여주고 있습니다.
+
+(Experiments - Comparison with sampling-based baseline)
+ 다음은 Unsupervised learning을 기반으로하는 방법과의 SeFa의 비교인데, 이 실험들에서 얘기하는 가장 큰 차이점은 SeFa는 data sampling이나 model training에 독립적으로 작동한다는 것입니다. 우선 Sampling을 기반으로 하는 GANSpace와 비교를 같은 StyleGAN에 적용한 실험에 대해서 설명을 해드리겠습니다.
+ 먼저 GANSpace에 대해서 잠깐 설명을 하면, sampling된 데이터셋에 대해 PCA를 수행하는 unsupervised learning을 기반한 방법으로, PCA를 통해 초기 주성분들이 데이터의 전체적이고 공통된 요소를 각각 disentangled하게 하는 방법이라고 할 수 있습니다. 그리고 눈치 채신 분도 계시겠지만 이러한 방식은 SeFa와 비슷한 방식이라고 생각할 수 있습니다.
+ 다시 본론으로 돌아와서, 표를 보시면 manipulation model은 같기 때문에 가까운 FID score를 보이는 것을 알 수 있습니다. 하지만, SeFa는 Re-scoring  및 User study에서 GANSpace를 능가함을 볼 수 있고, 그림을 통해서는 피부나 identity가 더욱 더 잘 보존 된 것을 볼 수 있습니다.
+
+(Experiments - Comparison with Learning-based baseline)
+ 그리고 Usupervised learning 방법을 학습 기반으로 한 모델과의 비교를 Info-PGGAN과 하였는데, 그림에서 보이시는 것 같이 포즈를 변경하고자 할 때, (a)인 Info-PGGAN에서 머리 색도 같이 바뀌는 것을 볼 수 있으며, 이러한 결과를 통해서 저자는 제안하는 방법이 정확한 방향으로의 변환이 가능하다는 것을 말하고있습니다.
+
+(Experiments - Real Image Editing)
+ 마지막으로 실제 이미지에서 적용이 가능한지에 대한 실험을 하였는데, 저자는 Generator가 실제 이미지에서 inference하는 것이 어렵기 때문에 제안된 방법에 최종적으로 GAN inversion을 포함하였다고 말하고있습니다.
+ GAN inversion이란, 기존 GAN의 경우 real image를 editing하기 위한 semantics 정보를 배우기 어려웠다는 것을 보완하기 위해서, 아래 그림과 같이 input image를 reconstruct 할 수 있는 가장 적절한 latent code를 찾아내는 것입니다.
+ 그래서 결과적으로 편집할 대상 이미지가 주어지면 먼저 latent space에서 latent code를 찾고, 다시 projection을 해서 SeFa에서 찾은 방향을 통해 이미지 변형을 다음 그림과 같이 진행했다고 말하고 있습니다.
+
+(Conclusion)
+ 결론입니다. 본 논문에서는 광범위한 실험으로 Unsupervised learning을 통해 다양한 유형의 GAN 모델에서 학습된 latent semantic 정보를 분석하여 다양한 semantics direction을 얻는  SeFa를 제안합니다. 그리고 팀원들과 논문을 읽으면서 특이했던 것은 pretrained weight를 직접적으로 사용했던 것이 가장 인상 깊었던 것 논문이었습니다. 감사합니다.
